@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Video Clipper Tool</title>
+  <title>Video Editor Tool</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <style>
     * {
@@ -98,6 +97,12 @@
       transition: width 0.3s ease;
     }
 
+    .frame-counter {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: #666;
+    }
+
     .output {
       margin-top: 2rem;
       display: none;
@@ -122,14 +127,6 @@
       text-decoration: underline;
     }
 
-    .short-container {
-      margin-bottom: 2rem;
-      padding: 1rem;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      background-color: #f9f9f9;
-    }
-
     .log {
       margin-top: 1rem;
       text-align: left;
@@ -142,18 +139,12 @@
       border-radius: 8px;
       background-color: #f9f9f9;
     }
-
-    .frame-counter {
-      margin-top: 1rem;
-      font-size: 0.9rem;
-      color: #666;
-    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Video Clipper Tool</h1>
-    <p>Upload a video to generate random short clips.</p>
+    <h1>Video Editor Tool</h1>
+    <p>Upload a video to generate short, vertical clips.</p>
     <input type="file" id="videoInput" accept="video/*">
     <button id="processButton">Process Video</button>
     <div class="status" id="status">Ready to process video.</div>
