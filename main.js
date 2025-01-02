@@ -1,20 +1,16 @@
 const { createFFmpeg, fetchFile } = FFmpeg;
 const ffmpeg = createFFmpeg({ log: true });
 
-// Add event listener to the "Process Video" button
 document.getElementById('processButton').addEventListener('click', async () => {
   const videoFile = document.getElementById('videoInput').files[0];
-  await processVideo(videoFile);
-});
-
-// Function to process the video
-async function processVideo(videoFile) {
   if (!videoFile) {
     alert('Please upload a video!');
     return;
   }
+  await processVideo(videoFile);
+});
 
-  // Show loading state
+async function processVideo(videoFile) {
   const button = document.getElementById('processButton');
   button.innerText = 'Processing...';
   button.disabled = true;
@@ -43,68 +39,47 @@ async function processVideo(videoFile) {
     const duration = await getVideoDuration(videoName);
     logMessage(`Video duration: ${duration} seconds.`);
 
-    // Step 2: Generate random clips
-    updateStatus('Generating random clips...', 50);
-    logMessage('Generating random clips...');
-    const numClips = Math.floor(Math.random() * 6) + 5; // 5–10 clips
-    const clips = generateRandomClips(duration, numClips);
-    logMessage(`Generated ${numClips} clips.`);
+    // Step 2: Generate a clip of 10-30 seconds
+    const clipDuration = Math.min(30, Math.max(10, duration)); // Ensure clip is 10-30 seconds
+    const startTime = Math.random() * (duration - clipDuration); // Random start time
+    const shortName = 'short_1.mp4';
 
-    // Step 3: Create short clips
-    const outputDiv = document.getElementById('output');
-    outputDiv.innerHTML = ''; // Clear previous output
-    outputDiv.style.display = 'block';
+    // Trim and resize the video
+    updateStatus('Creating short clip...', 60);
+    logMessage('Trimming and resizing video...');
 
-    for (let i = 0; i < clips.length; i++) {
-      const { startTime, clipDuration } = clips[i];
-      const shortName = `short_${i + 1}.mp4`;
-
-      // Trim and resize the video
-      updateStatus(`Creating short clip ${i + 1}...`, 60 + i * 5);
-      logMessage(`Trimming and resizing video for Clip ${i + 1}...`);
-
-      // Add FFmpeg progress listener
-      ffmpeg.setLogger(({ type, message }) => {
-        if (type === 'ffout') {
-          const frameMatch = message.match(/frame=\s*(\d+)/);
-          if (frameMatch) {
-            const framesRendered = parseInt(frameMatch[1]);
-            updateFrameCounter(framesRendered);
-          }
+    // Add FFmpeg progress listener
+    ffmpeg.setLogger(({ type, message }) => {
+      if (type === 'ffout') {
+        const frameMatch = message.match(/frame=\s*(\d+)/);
+        if (frameMatch) {
+          const framesRendered = parseInt(frameMatch[1]);
+          updateFrameCounter(framesRendered);
         }
-      });
+      }
+    });
 
-      await ffmpeg.run(
-        '-i', videoName,
-        '-vf', 'scale=1080:1920',
-        '-ss', startTime.toString(),
-        '-t', clipDuration.toString(),
-        shortName
-      );
-      logMessage(`Clip ${i + 1} created successfully.`);
+    await ffmpeg.run(
+      '-i', videoName,
+      '-vf', 'scale=1080:1920',
+      '-ss', startTime.toString(),
+      '-t', clipDuration.toString(),
+      shortName
+    );
+    logMessage('Clip created successfully.');
 
-      // Step 4: Generate download link
-      const data = ffmpeg.FS('readFile', shortName);
-      const videoBlob = new Blob([data.buffer], { type: 'video/mp4' });
-      const videoUrl = URL.createObjectURL(videoBlob);
+    // Step 3: Generate download link
+    const data = ffmpeg.FS('readFile', shortName);
+    const videoBlob = new Blob([data.buffer], { type: 'video/mp4' });
+    const videoUrl = URL.createObjectURL(videoBlob);
 
-      // Display the short clip
-      const shortContainer = document.createElement('div');
-      shortContainer.className = 'short-container';
-
-      const videoElement = document.createElement('video');
-      videoElement.src = videoUrl;
-      videoElement.controls = true;
-
-      const downloadLink = document.createElement('a');
-      downloadLink.href = videoUrl;
-      downloadLink.download = shortName;
-      downloadLink.innerText = `Download Short ${i + 1}`;
-
-      shortContainer.appendChild(videoElement);
-      shortContainer.appendChild(downloadLink);
-      outputDiv.appendChild(shortContainer);
-    }
+    // Display the short clip
+    const outputDiv = document.getElementById('output');
+    outputDiv.innerHTML = `
+      <video src="${videoUrl}" controls></video>
+      <a href="${videoUrl}" download="${shortName}">Download Short</a>
+    `;
+    outputDiv.style.display = 'block';
 
     updateStatus('Processing complete!', 100);
     logMessage('Video processing completed successfully.');
@@ -120,7 +95,6 @@ async function processVideo(videoFile) {
   }
 }
 
-// Helper function to get video duration
 async function getVideoDuration(videoName) {
   return new Promise((resolve, reject) => {
     const logs = [];
@@ -151,19 +125,6 @@ async function getVideoDuration(videoName) {
   });
 }
 
-// Helper function to generate random clips
-function generateRandomClips(duration, numClips) {
-  const clips = [];
-  for (let i = 0; i < numClips; i++) {
-    const clipDuration = Math.floor(Math.random() * 51) + 10; // 10–60 seconds
-    const maxStartTime = duration - clipDuration;
-    const startTime = Math.floor(Math.random() * maxStartTime);
-    clips.push({ startTime, clipDuration });
-  }
-  return clips;
-}
-
-// Function to update status and progress
 function updateStatus(message, progress) {
   const statusDiv = document.getElementById('status');
   const progressBar = document.getElementById('progressBar');
@@ -171,13 +132,11 @@ function updateStatus(message, progress) {
   progressBar.style.width = `${progress}%`;
 }
 
-// Function to update frame counter
 function updateFrameCounter(frames) {
   const frameCounter = document.getElementById('frameCounter');
   frameCounter.innerText = `Frames rendered: ${frames}`;
 }
 
-// Function to log messages
 function logMessage(message) {
   const logDiv = document.getElementById('log');
   const logEntry = document.createElement('div');
